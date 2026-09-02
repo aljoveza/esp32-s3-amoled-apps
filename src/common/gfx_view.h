@@ -27,7 +27,16 @@ uint8_t viewRotation();
 int16_t viewW();
 int16_t viewH();
 
+// Inverse of the drawing transform: maps a raw touch reading (from
+// readTouchInput(), in fixed physical panel coordinates) to the view-space
+// point it corresponds to under the current rotation. Use this whenever a
+// gesture cares about *where* on the displayed content a touch landed --
+// drawing position alone can't be compared against a raw touch otherwise,
+// since the panel itself never rotates.
+void vTouchToView(int16_t panelX, int16_t panelY, int16_t *viewX, int16_t *viewY);
+
 void vFillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
+void vFillCircle(int16_t x, int16_t y, int16_t r, uint16_t color);
 void vFillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1,
                    int16_t x2, int16_t y2, uint16_t color);
 void vFillScreen(uint16_t color);

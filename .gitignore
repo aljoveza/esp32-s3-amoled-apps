@@ -9,7 +9,13 @@
 
 # Vendored third-party libraries (LVGL, GFX_Library_for_Arduino, SensorLib,
 # XPowersLib, Adafruit_*, Arduino_DriveBus). Not tracked — see README setup.
-lib/
+# ES8311 is the one exception: unlike the others it isn't on the PlatformIO
+# registry, its source (examples_reference/, also gitignored) has no other
+# public copy, so it's tracked -- otherwise a fresh clone couldn't build
+# audio.cpp at all. (lib/* + !lib/ES8311, not a bare lib/ exclude: git won't
+# apply a negation pattern to a path whose parent directory is itself ignored.)
+lib/*
+!lib/ES8311
 
 # Waveshare demo sources, kept locally for reference only
 examples_reference/

@@ -63,3 +63,17 @@ directly, and your app is orientation-agnostic for free:
 that changed, which is what makes a hundredths field affordable at 40 fps.
 Text glyphs collapse each font column into vertical runs, ~12 rects per
 character instead of 35.
+
+### `audio.*` — ES8311 codec + I2S, for short tones
+
+`audioBegin()` brings up the codec and the I2S bus; `audioBeep(freqHz,
+durationMs, volumePercent)` synthesizes a sine tone on the fly and blocks
+until it finishes playing. This is a tone generator, not a media player —
+no file playback, no mixing. It exists for phase-change chimes, notification
+sounds, that kind of thing.
+
+This hardware path (codec + I2S + speaker amp) has far less runtime on this
+board than display/touch/IMU, so it's built defensively: `audioBegin()`
+returns `false` rather than blocking anything if any step fails, and
+`audioBeep()` is always safe to call — a silent no-op when the hardware never
+came up. Gate bring-up with `AUDIO_ENABLED` in `board_config.h`.

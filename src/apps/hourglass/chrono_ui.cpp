@@ -6,24 +6,25 @@
 //  Palette
 // =========================================================================
 static const uint16_t C_BLACK      = 0x0000;
-static const uint16_t C_TRACK      = C565(26, 25, 24);    // empty glass
-static const uint16_t C_TRACK_TICK = C565(62, 55, 44);    // 10-second notch
-static const uint16_t C_GRAIN      = C565(255, 232, 168); // falling sand
+static const uint16_t C_TRACK      = C565(24, 25, 27);    // empty glass
+static const uint16_t C_TRACK_TICK = C565(44, 52, 64);    // 10-second notch
+static const uint16_t C_GRAIN      = C565(200, 228, 255); // falling sand
 static const uint16_t C_DIGIT_ON   = C565(255, 255, 255);
 static const uint16_t C_DIGIT_OFF  = C565(26, 26, 26);
-static const uint16_t C_CS_ON      = C565(255, 170, 46);
-static const uint16_t C_CS_OFF     = C565(40, 26, 6);
+static const uint16_t C_CS_ON      = C565(90, 170, 255);
+static const uint16_t C_CS_OFF     = C565(10, 18, 34);
 static const uint16_t C_LABEL      = C565(112, 108, 100);
 static const uint16_t C_HINT       = C565(68, 66, 62);
-static const uint16_t C_NECK       = C565(150, 96, 24);
+static const uint16_t C_NECK       = C565(60, 110, 190);
 static const uint16_t C_RUN        = C565(86, 220, 140);
 static const uint16_t C_PAUSE      = C565(255, 198, 62);
-static const uint16_t C_FLASH      = C565(120, 214, 255);
+static const uint16_t C_FLASH      = C565(150, 220, 255);
 
-static const uint8_t SAND_NECK[3] = {255, 198, 96};
-static const uint8_t SAND_FAR[3]  = {214, 112, 18};
-static const uint8_t FLIP_NECK[3] = {255, 244, 214};
-static const uint8_t FLIP_FAR[3]  = {255, 186, 96};
+// Blue "sand": bright near the neck, deep and cool out at each bulb's tip.
+static const uint8_t SAND_NECK[3] = {120, 190, 255};
+static const uint8_t SAND_FAR[3]  = {20, 60, 150};
+static const uint8_t FLIP_NECK[3] = {225, 242, 255};
+static const uint8_t FLIP_FAR[3]  = {150, 200, 255};
 
 // =========================================================================
 //  Ring geometry
