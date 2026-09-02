@@ -20,6 +20,7 @@
 #include "display_driver.h"
 #include "gfx_view.h"
 #include "motion.h"
+#include "app_switch.h"
 
 static const uint16_t C_BG    = C565(0, 0, 0);
 static const uint16_t C_TITLE = C565(255, 255, 255);
@@ -78,7 +79,7 @@ static void drawStatic() {
 }
 
 // Only the live rows are repainted each frame.
-static void drawReport() {
+static void drawReport(TouchPoint pt) {
   char buf[64];
   s_row = 46;
 
@@ -104,7 +105,6 @@ static void drawReport() {
   s_row += 4;
   row("TOUCH", touchModelName(), touchAvailable() ? C_OK : C_BAD);
 
-  TouchPoint pt = readTouchInput();
   if (pt.isPressed) snprintf(buf, sizeof(buf), "x=%d y=%d", pt.x, pt.y);
   else              snprintf(buf, sizeof(buf), "(touch the screen)");
   row("", buf, pt.isPressed ? C_VAL : C_KEY);
@@ -124,13 +124,16 @@ static void drawReport() {
   row("ORIENT", buf, q < 0 ? C_KEY : C_VAL);
 
   // Crosshair that tracks the finger, which also proves the coordinate map.
+  // readTouchInput() reports fixed physical panel coordinates; vFillRect
+  // expects view-space, so the touch point has to go through vTouchToView
+  // first or the crosshair lands in the wrong place under any rotation.
   static int16_t lastX = -1, lastY = -1;
   if (lastX >= 0) {
     vFillRect(lastX - 10, lastY - 1, 21, 3, C_BG);
     vFillRect(lastX - 1, lastY - 10, 3, 21, C_BG);
   }
   if (pt.isPressed) {
-    lastX = pt.x; lastY = pt.y;
+    vTouchToView(pt.x, pt.y, &lastX, &lastY);
     vFillRect(lastX - 10, lastY - 1, 21, 3, C_CROSS);
     vFillRect(lastX - 1, lastY - 10, 3, 21, C_CROSS);
   } else {
@@ -173,9 +176,13 @@ void loop() {
     scanBus();
   }
 
+  // Hold the reserved top-left corner to return to the launcher.
+  TouchPoint pt = readTouchInput();
+  if (appSwitchPollHome(pt, now)) appSwitchGoHome();
+
   if (now - lastFrame >= BT_FRAME_MS) {
     lastFrame = now;
-    drawReport();
+    drawReport(pt);
   }
   delay(2);
 }

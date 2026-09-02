@@ -30,6 +30,23 @@
 // mounting. Bump by 1 until on-screen text reads the right way up.
 #define SCREEN_ROTATION_OFFSET     0
 
+// ---- Audio (ES8311 codec + I2S) ------------------------------------------
+// Bring the codec up at all. Apps that use audioBeep() should still check
+// audioAvailable() and skip the sound gracefully if this hardware is ever
+// missing or fails to init -- audio has had far less runtime on this board
+// than the display/touch/IMU path, see docs/HARDWARE.md.
+#define AUDIO_ENABLED               1
+#define AUDIO_SAMPLE_RATE           16000
+#define AUDIO_VOLUME                70    // 0..100, ES8311 voice volume
+
+// ---- App switching --------------------------------------------------------
+// Reserved corner (view-space, top-left of whatever is currently on screen)
+// that any app can be held on to return to the launcher menu. Kept off to
+// the side of the screen apps' own tap/hold gestures already use, and small
+// enough not to be brushed accidentally by a normal tap near the edge.
+#define HOME_CORNER_SIZE            56    // px, square
+#define HOME_HOLD_MS                1500
+
 // ---- Diagnostics --------------------------------------------------------
 // 1 adds a periodic I2C scan + IMU trace on serial, and a hardware status
 // line on the panel. Apps may use this to decide whether to show debug UI.

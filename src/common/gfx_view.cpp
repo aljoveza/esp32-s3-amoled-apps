@@ -28,6 +28,23 @@ static void vPoint(int16_t x, int16_t y, int16_t *px, int16_t *py) {
   }
 }
 
+void vTouchToView(int16_t panelX, int16_t panelY, int16_t *viewX, int16_t *viewY) {
+  // vPoint() maps view -> panel per rotation; this is its inverse.
+  switch (s_rot) {
+    case 1:  *viewX = panelY;                    *viewY = LCD_WIDTH - 1 - panelX;  break;
+    case 2:  *viewX = LCD_WIDTH - 1 - panelX;     *viewY = LCD_HEIGHT - 1 - panelY; break;
+    case 3:  *viewX = LCD_HEIGHT - 1 - panelY;    *viewY = panelX;                  break;
+    default: *viewX = panelX;                     *viewY = panelY;                  break;
+  }
+}
+
+void vFillCircle(int16_t x, int16_t y, int16_t r, uint16_t color) {
+  if (!gfx) return;
+  int16_t px, py;
+  vPoint(x, y, &px, &py);
+  gfx->fillCircle(px, py, r, color);   // a circle's shape survives a 90 turn
+}
+
 void vFillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1,
                    int16_t x2, int16_t y2, uint16_t color) {
   if (!gfx) return;

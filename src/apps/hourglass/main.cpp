@@ -17,6 +17,7 @@
 #include "display_driver.h"
 #include "chrono_ui.h"
 #include "motion.h"
+#include "app_switch.h"
 
 // ---- Clock core ---------------------------------------------------------
 // esp_timer_get_time() is a 64-bit microsecond counter, so unlike millis()
@@ -136,10 +137,15 @@ void loop() {
 
   // 1. Touch: short tap toggles pause, long press resets. Polling at 50 Hz is
   //    plenty for taps and keeps the shared I2C bus quiet for the IMU.
+  // A hold in the reserved top-left corner goes back to the launcher instead
+  // of being treated as this app's own hold-to-reset -- checked first, and
+  // touches inside that corner never reach the logic below.
   if (nowMs - s_lastTouchPoll >= 20) {
     s_lastTouchPoll = nowMs;
     TouchPoint pt = readTouchInput();
-    if (pt.isPressed) {
+    if (appSwitchPollHome(pt, nowMs)) appSwitchGoHome();
+
+    if (pt.isPressed && !appSwitchInHomeCorner(pt)) {
       if (!s_touchDown) {
         s_touchDown = true;
         s_touchStart = nowMs;

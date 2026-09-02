@@ -51,6 +51,25 @@ between touches and break press-and-hold:
 
 ---
 
+## Audio (ES8311 + I2S) — confirmed working
+
+The codec at `0x18` and the speaker amp (`PA`, GPIO 46) are live and were
+brought up successfully from `src/common/audio.*` and confirmed end to end
+(a synthesized two-note chime, heard on the actual board).
+
+One thing worth knowing if you touch this code: the Waveshare example uses
+`ESP_I2S.h` (`I2SClass` with `setPins()`/`I2S_MODE_STD`), which is **not
+present** in the arduino-esp32 core this project's `platform = espressif32`
+pulls in (only the older, different `I2SClass` in `libraries/I2S/` is). We
+used the legacy ESP-IDF driver (`driver/i2s.h`: `i2s_driver_install`,
+`i2s_set_pin`, `i2s_write`) instead, which is present and is what
+`src/common/audio.cpp` is built on. Do not `#include <ESP_I2S.h>` expecting
+it to be there.
+
+The ES8311 driver itself (`lib/ES8311/`, vendored from the same example) talks
+to the codec through `esp32-hal-i2c.h` — the same HAL Arduino's `Wire` uses —
+so it shares the bus `Wire.begin()` already opened; no second I2C port needed.
+
 ## The panel cannot rotate
 
 `Arduino_CO5300::setRotation()` carries the comment *"CO5300 does not support

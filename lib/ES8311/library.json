@@ -1,0 +1,7 @@
+{
+  "name": "ES8311",
+  "version": "1.0.0",
+  "description": "ES8311 audio codec driver, vendored from the Waveshare ESP32-S3-Touch-AMOLED-1.8 example set (Espressif, Apache-2.0). Talks to the codec over the existing Arduino Wire I2C bus via esp32-hal-i2c.",
+  "frameworks": "arduino",
+  "platforms": "espressif32"
+}
