@@ -22,6 +22,7 @@ for how that works.
 | [`boardtest`](src/apps/boardtest/) | Hardware self-test. I2C map, touch model + live coordinates, IMU vector, orientation — all on the panel, no serial cable. |
 | [`pomodoro`](src/apps/pomodoro/) | Minimal pomodoro timer. Auto-cycling work/break ring, chime + sweep on transition, nothing to configure on-device. |
 | [`launcher`](src/apps/launcher/) | Home screen / app picker. Boots first; tap an app to open it. |
+| [`roundtimer`](src/apps/roundtimer/) | Game round countdown. Tap to start; rounds repeat automatically, with escalating colour/flash/sound as each one nears zero. |
 
 ## Layout
 
@@ -43,7 +44,8 @@ for how that works.
 │       ├── launcher/     home screen / app picker, boots first
 │       ├── hourglass/    app_config.h + main.cpp + its own UI
 │       ├── boardtest/
-│       └── pomodoro/
+│       ├── pomodoro/
+│       └── roundtimer/   game round countdown
 ├── docs/
 │   ├── HARDWARE.md       what this board actually is, and bring-up traps
 │   └── LAUNCHER.md       how on-device app switching fits together
