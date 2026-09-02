@@ -2,22 +2,29 @@
 #
 # Multi-app partition table for the on-device launcher.
 #
-# 6 app slots of 960 KB each (aligned to the 64 KB boundary app partitions
+# 6 app slots of 2 MiB each (aligned to the 64 KB boundary app partitions
 # require): "launcher" always boots first on a fresh chip (blank otadata
 # defaults to ota_0); slot1..slot5 hold whatever apps flash.sh has assigned
 # them to (see APP_SLOTS in flash.sh and the manifest in
 # src/apps/launcher/manifest.h -- both must agree, see docs/LAUNCHER.md).
 #
+# Slots were originally 960 KB each, sized against apps with no networking.
+# Adding Wi-Fi to one app (the TCP/IP stack + WebServer) pushed its binary
+# past that on the first build that actually included it -- 1.07 MB, not
+# ~630 KB like every prior app. Bumped to 2 MiB per slot rather than give
+# just that one app special-cased sizing: flash is abundant (16 MB total),
+# and every app benefits from the same headroom for whatever it grows into.
+#
 # Switching apps at runtime calls esp_ota_set_boot_partition() on one of
 # these six and reboots; nothing here is touched by that, it's just where
-# the app images physically live. ~10 MB of the 16 MB chip is intentionally
-# left unpartitioned for future growth.
+# the app images physically live. ~3.9 MB of the 16 MB chip is still left
+# unpartitioned for further growth.
 nvs,       data, nvs,      0x9000,   0x5000,
 otadata,   data, ota,      0xe000,   0x2000,
-launcher,  app,  ota_0,    0x10000,  0xF0000,
-slot1,     app,  ota_1,    0x100000, 0xF0000,
-slot2,     app,  ota_2,    0x1F0000, 0xF0000,
-slot3,     app,  ota_3,    0x2E0000, 0xF0000,
-slot4,     app,  ota_4,    0x3D0000, 0xF0000,
-slot5,     app,  ota_5,    0x4C0000, 0xF0000,
-coredump,  data, coredump, 0x5B0000, 0x10000,
+launcher,  app,  ota_0,    0x10000,  0x200000,
+slot1,     app,  ota_1,    0x210000, 0x200000,
+slot2,     app,  ota_2,    0x410000, 0x200000,
+slot3,     app,  ota_3,    0x610000, 0x200000,
+slot4,     app,  ota_4,    0x810000, 0x200000,
+slot5,     app,  ota_5,    0xA10000, 0x200000,
+coredump,  data, coredump, 0xC10000, 0x10000,

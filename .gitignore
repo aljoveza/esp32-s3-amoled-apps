@@ -25,3 +25,6 @@ firmware_backup/
 
 # macOS
 .DS_Store
+
+# Local Pi runtime state
+.atl/
