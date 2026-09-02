@@ -1,0 +1,13 @@
+Shared headers, visible to every app (platformio.ini adds -I include).
+
+  board_config.h   Board revision, brightness, IMU thresholds, rotation
+                   offset. Describes the HARDWARE, so it is shared by all
+                   apps. Anything describing a single app belongs in that
+                   app's app_config.h instead.
+
+  pin_config.h     Pin map: QSPI display, I2C, I2S audio, SD.
+
+  lv_conf.h        LVGL configuration. Unused at present -- no app currently
+                   pulls LVGL in, so it is not compiled.
+
+See ../docs/HARDWARE.md for what this board actually is.
