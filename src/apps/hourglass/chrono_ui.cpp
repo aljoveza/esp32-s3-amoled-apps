@@ -266,7 +266,7 @@ static void drawCenterStatic() {
                 viewW() - IN_X - 9, my, C_NECK);
 
   printCentered("E L A P S E D", LABEL_Y, 1, C_LABEL);
-  printCentered("TAP = PAUSE   HOLD = RESET", HINT_Y, 1, C_HINT);
+  printCentered("TAP=PAUSE  HOLD=RESET", HINT_Y, 1, C_HINT);
   if (s_tiltHint) printCentered("TURN 90" "\xF8" " TO RESTART", HINT2_Y, 1, C_HINT);
 
   // Decimal point in front of the hundredths.

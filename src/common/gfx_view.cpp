@@ -11,12 +11,31 @@ int16_t viewH() { return (s_rot & 1) ? LCD_WIDTH : LCD_HEIGHT; }
 
 void vFillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) {
   if (!gfx || w <= 0 || h <= 0) return;
+  // This panel/driver combination (CO5300 QSPI) silently draws nothing for
+  // a fill whose PANEL-space width is exactly 1 physical pixel -- confirmed
+  // on real hardware: a 1x1 and a 1x8 fill both vanished, a 4x8 fill right
+  // next to them drew fine. Root cause traced into
+  // Arduino_CO5300::writeAddrWindow()'s CASET column-window command, not
+  // anything in this file; not something to patch in vendored code, so
+  // widen to 2 physical pixels instead of silently losing the pixel. Which
+  // of w/h maps to the panel's width axis depends on rotation (odd
+  // rotations swap the axes, same as viewW()/viewH() do).
+  if (s_rot & 1) { if (h == 1) h = 2; }
+  else           { if (w == 1) w = 2; }
   switch (s_rot) {
     case 1:  gfx->fillRect(LCD_WIDTH - y - h, x, h, w, color); break;
     case 2:  gfx->fillRect(LCD_WIDTH - x - w, LCD_HEIGHT - y - h, w, h, color); break;
     case 3:  gfx->fillRect(y, LCD_HEIGHT - x - w, h, w, color); break;
     default: gfx->fillRect(x, y, w, h, color); break;
   }
+}
+
+void vDrawRectOutline(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) {
+  if (w <= 0 || h <= 0) return;
+  vFillRect(x, y, w, 1, color);
+  vFillRect(x, y + h - 1, w, 1, color);
+  vFillRect(x, y, 1, h, color);
+  vFillRect(x + w - 1, y, 1, h, color);
 }
 
 static void vPoint(int16_t x, int16_t y, int16_t *px, int16_t *py) {
@@ -75,7 +94,18 @@ static void vDrawChar(int16_t x, int16_t y, unsigned char ch, uint8_t size, uint
   }
 }
 
+// Text can't legibly go below size 2 on this display: at size 1, adjacent
+// glyph columns sit only 1px apart, but the panel/driver can't draw a
+// width=1 fill at all (see the note on vFillRect's own width==1 workaround)
+// -- every column widening into its neighbour turns whole characters into
+// solid blobs, confirmed on real hardware. Size 2's columns are naturally
+// 2px apart, so nothing needs widening and nothing bleeds. Clamped here,
+// centrally, rather than requiring every caller across every app to know
+// this and pass 2 themselves.
+static inline uint8_t clampTextSize(uint8_t size) { return size < 2 ? 2 : size; }
+
 void vDrawText(const char *s, int16_t x, int16_t y, uint8_t size, uint16_t color) {
+  size = clampTextSize(size);
   for (const char *p = s; *p; p++) {
     vDrawChar(x, y, (unsigned char)*p, size, color);
     x += 6 * size;
@@ -83,6 +113,7 @@ void vDrawText(const char *s, int16_t x, int16_t y, uint8_t size, uint16_t color
 }
 
 int16_t vTextWidth(const char *s, uint8_t size) {
+  size = clampTextSize(size);
   return (int16_t)strlen(s) * 6 * size;
 }
 

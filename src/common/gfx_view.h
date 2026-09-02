@@ -36,6 +36,10 @@ int16_t viewH();
 void vTouchToView(int16_t panelX, int16_t panelY, int16_t *viewX, int16_t *viewY);
 
 void vFillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
+// 1px-thick outline, drawn as four vFillRects (not a hollow primitive of
+// its own -- consistent with everything else in this file being built out
+// of rects/circles/triangles, no dedicated line-drawing path).
+void vDrawRectOutline(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
 void vFillCircle(int16_t x, int16_t y, int16_t r, uint16_t color);
 void vFillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1,
                    int16_t x2, int16_t y2, uint16_t color);

@@ -42,6 +42,7 @@ app_slot() {
     hourglass) echo "slot1" ;;
     pomodoro)  echo "slot2" ;;
     boardtest) echo "slot3" ;;
+    roundtimer) echo "slot5" ;;
     *)         echo "" ;;
   esac
 }

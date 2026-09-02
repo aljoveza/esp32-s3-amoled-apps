@@ -21,10 +21,12 @@ app's bug can never affect another's.
 
 ## The moving pieces
 
-**`partitions_launcher.csv`** — 6 app slots of 960 KB each: `launcher`
+**`partitions_launcher.csv`** — 6 app slots of 2 MiB each: `launcher`
 (always boots first — blank OTA state defaults to slot 0), then `slot1`
-through `slot5` for apps. ~10 MB of the 16 MB chip is intentionally left
-unpartitioned for future growth.
+through `slot5` for apps. ~3.9 MB of the 16 MB chip is still left
+unpartitioned for future growth. (Originally 960 KB per slot — bumped once
+a Wi-Fi-enabled experiment came in at 1.07 MB, well past what any prior
+app needed; kept at 2 MiB since every app benefits from the headroom.)
 
 **`src/common/app_switch.*`** — the only code that touches OTA state.
 `appSwitchLaunch(label)` finds a partition by name, checks it actually holds
