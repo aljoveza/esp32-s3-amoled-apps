@@ -7,6 +7,13 @@ multi-app setup fits together.
 
 ## What it does
 
+Shows a small battery badge in the top-right corner (outline, fill bar,
+percentage) whenever the AXP2101 power chip answers and a battery is
+connected — hidden entirely otherwise, since this board runs fine on USB
+power alone with nothing plugged in to report. Checked once at boot and
+every 5s after, only redrawing the badge itself when the reading actually
+changes.
+
 Shows one row per entry in `manifest.h`. A row for a slot with nothing
 flashed into it yet is shown dim with "(not installed)" and does nothing if
 tapped — checked live each frame via `appSwitchSlotValid()`, not assumed

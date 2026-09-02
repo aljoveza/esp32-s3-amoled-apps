@@ -21,6 +21,7 @@
 #include "gfx_view.h"
 #include "motion.h"
 #include "app_switch.h"
+#include "battery.h"
 
 static const uint16_t C_BG    = C565(0, 0, 0);
 static const uint16_t C_TITLE = C565(255, 255, 255);
@@ -40,7 +41,7 @@ static const char *chipName(uint8_t addr) {
   switch (addr) {
     case 0x15: return "CST816T touch";
     case 0x18: return "ES8311 audio";
-    case 0x20: return "XCA9554 expander";
+    case 0x20: return "XCA9554 exp";
     case 0x34: return "AXP2101 PMU";
     case 0x38: return "FT3168 touch";
     case 0x51: return "PCF85063 RTC";
@@ -66,10 +67,13 @@ static void scanBus() {
 static int16_t s_row;
 static void row(const char *key, const char *val, uint16_t valColor) {
   int16_t x = 16;
-  vFillRect(x, s_row, viewW() - 2 * x, 8, C_BG);
+  // Row height/spacing sized for size-2 text (16px tall) -- text can't
+  // legibly render below size 2 on this display, see vDrawText's size
+  // clamp in gfx_view.cpp; this used to be tuned for true size-1 (8px).
+  vFillRect(x, s_row, viewW() - 2 * x, 16, C_BG);
   vDrawText(key, x, s_row, 1, C_KEY);
   vDrawText(val, x + 96, s_row, 1, valColor);
-  s_row += 12;
+  s_row += 18;
 }
 
 static void drawStatic() {
@@ -91,6 +95,7 @@ static void drawReport(TouchPoint pt) {
   row("I2C BUS", buf, s_addrCount ? C_OK : C_BAD);
   row("", s_addrLine, C_VAL);
 
+
   // Name each address on its own line so an unexpected chip is obvious.
   for (const char *p = s_addrLine; *p; ) {
     unsigned v = 0;
@@ -102,14 +107,12 @@ static void drawReport(TouchPoint pt) {
     while (*p == ' ') p++;
   }
 
-  s_row += 4;
   row("TOUCH", touchModelName(), touchAvailable() ? C_OK : C_BAD);
 
   if (pt.isPressed) snprintf(buf, sizeof(buf), "x=%d y=%d", pt.x, pt.y);
   else              snprintf(buf, sizeof(buf), "(touch the screen)");
   row("", buf, pt.isPressed ? C_VAL : C_KEY);
 
-  s_row += 4;
   row("IMU", motionAvailable() ? "QMI8658 ok" : "not found",
       motionAvailable() ? C_OK : C_BAD);
 
@@ -122,6 +125,13 @@ static void drawReport(TouchPoint pt) {
   if (q < 0) snprintf(buf, sizeof(buf), "flat (ignored)");
   else       snprintf(buf, sizeof(buf), "quadrant %d", q);
   row("ORIENT", buf, q < 0 ? C_KEY : C_VAL);
+
+  row("BATTERY", batteryAvailable() ? "AXP2101 ok" : "not found",
+      batteryAvailable() ? C_OK : C_BAD);
+  int8_t pct = batteryPercent();
+  if (pct < 0) snprintf(buf, sizeof(buf), "no battery");
+  else         snprintf(buf, sizeof(buf), "%d%%  %s", pct, batteryCharging() ? "(charging)" : "");
+  row("", buf, pct < 0 ? C_KEY : C_VAL);
 
   // Crosshair that tracks the finger, which also proves the coordinate map.
   // readTouchInput() reports fixed physical panel coordinates; vFillRect
@@ -149,6 +159,7 @@ void setup() {
   initDisplayAndTouch();
   setDisplayBrightness(DISPLAY_BRIGHTNESS);
   motionBegin();
+  batteryBegin();
 
   scanBus();
   drawStatic();

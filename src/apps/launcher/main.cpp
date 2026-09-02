@@ -17,6 +17,7 @@
 #include "gfx_view.h"
 #include "motion.h"
 #include "app_switch.h"
+#include "battery.h"
 
 static const uint16_t C_BG      = C565(0, 0, 0);
 static const uint16_t C_TITLE   = C565(255, 255, 255);
@@ -30,6 +31,36 @@ static const uint16_t C_HINT    = C565(70, 68, 66);
 static const int16_t TITLE_H = 44;
 static const int16_t HINT_H  = 24;
 
+static const uint16_t C_BATT_GREEN  = C565(90, 210, 130);   // >80%
+static const uint16_t C_BATT_BLUE   = C565(100, 170, 255);  // 20-79%
+static const uint16_t C_BATT_YELLOW = C565(255, 220, 60);   // 10-19%
+static const uint16_t C_BATT_RED    = C565(255, 90, 90);    // <10%
+
+static uint16_t batteryColor(int8_t pct) {
+  if (pct > 80) return C_BATT_GREEN;
+  if (pct >= 20) return C_BATT_BLUE;
+  if (pct >= 10) return C_BATT_YELLOW;
+  return C_BATT_RED;
+}
+
+// Just the percentage, colour-coded by charge level -- no icon. A first
+// version drew a battery glyph, but text at the size this display can
+// actually render legibly (see vDrawText's size clamp in gfx_view.cpp) was
+// too wide to fit next to it without overlapping. pct<0 (no PMU found, or
+// no battery connected -- this board runs fine on USB alone) draws nothing.
+static const int16_t BATT_W = 62;   // reserved width, clears "100%+"
+
+static void drawBatteryBadge(int8_t pct, bool charging) {
+  const int16_t right = viewW() - 12, y = 12;
+  vFillRect(right - BATT_W, y, BATT_W, 16, C_BG);   // clear any previous reading
+  if (pct < 0) return;
+
+  char pctText[8];
+  snprintf(pctText, sizeof(pctText), "%d%%%s", pct, charging ? "+" : "");
+  int16_t w = vTextWidth(pctText, 2);
+  vDrawText(pctText, right - w, y, 2, batteryColor(pct));
+}
+
 static int16_t rowTop(int i, int16_t rowH) { return TITLE_H + i * rowH; }
 
 static void drawRow(int i, int16_t rowH, bool valid, bool pressed) {
@@ -41,10 +72,14 @@ static void drawRow(int i, int16_t rowH, bool valid, bool pressed) {
   vFillRect(0, y + rowH - 1, viewW(), 1, C_RULE);
 }
 
+static int8_t s_battPct = -1;
+static bool   s_battCharging = false;
+
 static void drawAll(int pressedRow) {
   int16_t rowH = (viewH() - TITLE_H - HINT_H) / APP_MANIFEST_COUNT;
   vFillScreen(C_BG);
   vDrawTextCentered("SELECT APP", 14, 2, C_TITLE);
+  drawBatteryBadge(s_battPct, s_battCharging);
   vFillRect(0, TITLE_H - 1, viewW(), 1, C_RULE);
   for (int i = 0; i < APP_MANIFEST_COUNT; i++)
     drawRow(i, rowH, appSwitchSlotValid(APP_MANIFEST[i].partition), i == pressedRow);
@@ -69,12 +104,30 @@ void setup() {
   initDisplayAndTouch();
   setDisplayBrightness(DISPLAY_BRIGHTNESS);
   motionBegin();
+  batteryBegin();
+  s_battPct = batteryPercent();
+  s_battCharging = batteryCharging();
 
   drawAll(-1);
 }
 
 void loop() {
   uint32_t nowMs = millis();
+
+  // Battery doesn't change fast enough to be worth reading every frame --
+  // an I2C round trip a few times a minute is plenty, and only the badge
+  // itself gets redrawn, not the whole screen.
+  static uint32_t lastBattCheck = 0;
+  if (batteryAvailable() && nowMs - lastBattCheck >= 5000) {
+    lastBattCheck = nowMs;
+    int8_t pct = batteryPercent();
+    bool charging = batteryCharging();
+    if (pct != s_battPct || charging != s_battCharging) {
+      s_battPct = pct;
+      s_battCharging = charging;
+      drawBatteryBadge(s_battPct, s_battCharging);
+    }
+  }
 
   motionPoll();
 #if SCREEN_FOLLOWS_DEVICE
