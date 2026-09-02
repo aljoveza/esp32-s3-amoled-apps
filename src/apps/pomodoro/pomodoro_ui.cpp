@@ -106,11 +106,15 @@ static const int16_t BIG_W = 40, BIG_H = 76, BIG_T = 9;
 static const int16_t BIG_DX[4] = {0, 47, 104, 151};
 static const int16_t COLON_DX = 93;
 static const int16_t BIG_SPAN = 191;   // BIG_DX[3] + BIG_W
-static const int16_t STACK_H = 176;
+static const int16_t STACK_H = 178;
 
 static int16_t IN_X, IN_Y, IN_W, IN_H;
-static int16_t BIG_X, BIG_Y, LABEL_Y, STATUS_Y, DOTS_Y, HINT_Y;
+static int16_t BIG_X, BIG_Y, LABEL_Y, PHASE_Y, STATUS_Y, DOTS_Y, HINT_Y;
 
+// Spacing here assumes every size-1 label is 16px tall (text can't legibly
+// render smaller than size 2 on this display -- see vDrawText's clamp in
+// gfx_view.cpp). This used to be tuned for true size-1 (8px) text; found
+// too cramped in testing once that stopped being the real height.
 static void layoutRecompute() {
   IN_X = RING_MARGIN + RING_THICK;
   IN_Y = RING_MARGIN + RING_THICK;
@@ -118,11 +122,12 @@ static void layoutRecompute() {
   IN_H = viewH() - 2 * IN_Y;
 
   int16_t top = viewH() / 2 - STACK_H / 2;
-  LABEL_Y  = top;
-  BIG_Y    = top + 26;
-  STATUS_Y = top + 116;
-  DOTS_Y   = top + 144;
-  HINT_Y   = top + 164;
+  LABEL_Y  = top;          // "POMODORO", 16px tall
+  PHASE_Y  = top + 20;     // WORK/BREAK/..., 16px tall
+  BIG_Y    = top + 40;     // digits, BIG_H tall
+  STATUS_Y = top + 40 + BIG_H + 4;
+  DOTS_Y   = STATUS_Y + 22;
+  HINT_Y   = DOTS_Y + 16;
 
   BIG_X = (viewW() - BIG_SPAN) / 2;
 }
@@ -140,7 +145,7 @@ static uint32_t s_offAt = 0;
 static void drawCenterStatic(const PomodoroView &v) {
   vFillRect(IN_X, IN_Y, IN_W, IN_H, C_BG);
   vDrawTextCentered("POMODORO", LABEL_Y, 1, C_LABEL, s_offX);
-  vDrawTextCentered("TAP = PAUSE   HOLD = RESET", HINT_Y, 1, C_HINT, s_offX);
+  vDrawTextCentered("TAP=PAUSE  HOLD=RESET", HINT_Y, 1, C_HINT, s_offX);
 
   for (int i = 0; i < 4; i++) s_prevBig[i] = -9;
   s_prevColon = -1;
@@ -163,8 +168,8 @@ static void drawDots(uint8_t setCount) {
 static void drawCenter(const PomodoroView &v, bool force) {
   if (force || (int8_t)v.phase != s_prevPhase) {
     s_prevPhase = (int8_t)v.phase;
-    vFillRect(IN_X, LABEL_Y + 10 + s_offY, IN_W, 12, C_BG);
-    vDrawTextCentered(phaseLabel(v.phase), LABEL_Y + 12, 1, phaseColor(v.phase), s_offX);
+    vFillRect(IN_X, PHASE_Y - 2 + s_offY, IN_W, 18, C_BG);
+    vDrawTextCentered(phaseLabel(v.phase), PHASE_Y, 1, phaseColor(v.phase), s_offX);
   }
 
   int8_t d[4] = {(int8_t)(v.minutes / 10), (int8_t)(v.minutes % 10),
