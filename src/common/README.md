@@ -55,14 +55,34 @@ directly, and your app is orientation-agnostic for free:
 | `viewSetRotation(0..3)`, `viewRotation()` | quarter turns, clockwise |
 | `viewW()`, `viewH()` | canvas size, swaps with rotation |
 | `vFillRect`, `vFillTriangle`, `vFillScreen` | primitives |
-| `vDrawText`, `vDrawTextCentered`, `vTextWidth` | 5×7 font, drawn manually because the library cannot rotate text |
+| `vDrawText`, `vDrawTextCentered`, `vTextWidth` | 5×7 font, drawn manually because the library cannot rotate text. **Clamps to a minimum size of 2** -- size 1 is unreadable on this display, see `docs/HARDWARE.md` |
 | `vSeg7Digit`, `vSeg7Colon` | seven-segment digits from plain rectangles |
 | `C565(r,g,b)` | 8-bit RGB → RGB565 |
 
 `vSeg7Digit` takes the previously drawn value and repaints only the segments
 that changed, which is what makes a hundredths field affordable at 40 fps.
 Text glyphs collapse each font column into vertical runs, ~12 rects per
-character instead of 35.
+character instead of 35. `vDrawRectOutline` is four `vFillRect` calls, kept
+here rather than duplicated in an app because more than one app draws small
+UI chrome (badges, icons) that wants a hollow rectangle.
+
+`vFillRect` also silently widens any fill that would be exactly 1 physical
+pixel wide -- this display/driver combination can't draw one at all. See
+`docs/HARDWARE.md` for how that was found; if you're laying out something
+that assumes true 1px lines or true size-1 text, it won't look like you
+expect -- check a rendered preview, the same way every visual feature in
+this project has been checked, rather than trust the pixel math alone.
+
+### `battery.*` — AXP2101 power chip
+
+`batteryBegin()` brings up the AXP2101 (I2C `0x34`); `batteryPercent()`
+returns 0-100 or `-1` if unavailable or no battery is connected (this board
+runs fine on USB power alone), `batteryCharging()` reports charge state.
+Built the same defensive way as `audio.*` and `app_switch.*`'s slot
+validation: never crashes if the chip doesn't answer, every accessor is
+always safe to call. Driven by `lib/XPowersLib` (vendored, gitignored like
+the other third-party libs), which nothing outside this file includes
+directly.
 
 ### `audio.*` — ES8311 codec + I2S, for short tones
 

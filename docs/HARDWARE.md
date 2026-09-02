@@ -51,6 +51,14 @@ between touches and break press-and-hold:
 
 ---
 
+## Battery (AXP2101) — confirmed working
+
+`0x34` was in the I2C scan from the very first bring-up, named but unused
+until now. `src/common/battery.*` brings it up via `lib/XPowersLib`
+(`XPowersPMU power; power.begin(Wire, AXP2101_SLAVE_ADDRESS, IIC_SDA,
+IIC_SCL)` — the vendor's own example for this exact board uses the same
+call), shown in the `launcher` app's badge and the `boardtest` app's report.
+
 ## Audio (ES8311 + I2S) — confirmed working
 
 The codec at `0x18` and the speaker amp (`PA`, GPIO 46) are live and were
@@ -69,6 +77,40 @@ it to be there.
 The ES8311 driver itself (`lib/ES8311/`, vendored from the same example) talks
 to the codec through `esp32-hal-i2c.h` — the same HAL Arduino's `Wire` uses —
 so it shares the bus `Wire.begin()` already opened; no second I2C port needed.
+
+## The panel cannot draw a fill exactly 1 pixel wide
+
+Confirmed on real hardware, isolated with a minimal reproduction: any
+`fillRect` call whose PANEL-space width is exactly 1 physical pixel draws
+nothing at all -- silently, no error. A 1x1 fill and a 1x8 fill both
+vanished; a 4x8 fill drawn right next to them worked fine. Root cause
+traced into `Arduino_CO5300::writeAddrWindow()`'s CASET (column address set)
+command in the vendored GFX library -- not anything in this project's own
+code, and not something to patch in vendored code.
+
+This mattered more than it sounds: `gfx_view.h`'s 5x7 text renderer draws
+each glyph column as its own thin vertical fill, and at text size 1 every
+column is exactly 1px wide -- so **size-1 text drew nothing on this board,
+at all, in every app, the whole time**, and nobody had scrutinized small
+hint/label text closely enough to notice small text was silently missing
+entirely rather than just being small.
+
+Two-part fix, both in `src/common/gfx_view.cpp`:
+
+1. **`vFillRect`** widens any fill whose *panel-space* width would be
+   exactly 1 to 2 pixels instead of silently drawing nothing. (Which of the
+   view-space `w`/`h` parameters maps to the panel's width axis depends on
+   rotation -- odd rotations swap them, same as `viewW()`/`viewH()` do.)
+   Fine for borders, single-pixel accents, anything geometric.
+2. **Text specifically still doesn't work below size 2**, even with that
+   fix: at size 1, adjacent glyph columns sit only 1px apart, so widening
+   every column to 2px makes neighbouring columns fully overlap, turning
+   whole characters into solid blobs -- confirmed on hardware, genuinely
+   unreadable, not just uglier. `vDrawText`/`vTextWidth` now clamp size to a
+   minimum of 2 centrally, so no caller anywhere has to know about this.
+   Every app on this board had its size-1 hint text bumped up a size as a
+   result -- some layouts needed retuning (wider strings, taller line
+   spacing) since a footprint that assumed 8px-tall text now needs 16px.
 
 ## The panel cannot rotate
 
