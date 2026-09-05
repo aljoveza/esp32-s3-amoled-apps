@@ -140,6 +140,34 @@ in a `finally`.
 
 ---
 
+## Bluetooth LE (`camremote`) — GoPro needs a secured link; there's no Classic BT
+
+**The ESP32-S3's radio is BLE-only** — no Classic Bluetooth (BR/EDR), unlike
+the original ESP32. That rules out AVRCP (the profile most cheap "Bluetooth
+selfie remote" gadgets for phones actually use for their volume-key trick):
+`camremote`'s PHONE mode gets the same effect a different way, advertising
+as a plain **BLE HID** "Consumer Control" peripheral and sending the
+Volume-Up usage code instead.
+
+**A GoPro (HERO8 Black or newer, the "Open GoPro" BLE command set) ignores
+every command sent over a plain, unencrypted connection — no error, it just
+does nothing.** This cost other people real debugging time before it cost
+us any (see the [ESP32-S3 discussion linked from `camremote`'s
+README](../src/apps/camremote/README.md)): connecting alone isn't enough,
+the link has to be secured. `camremote_gopro.cpp` calls
+`client->secureConnection()` right after connecting and won't try to
+subscribe/write anything until `onAuthenticationComplete` reports
+`connInfo.isEncrypted()`. GoPro's own BLE GATT layout isn't published as a
+plain UUID table anywhere official; the values `camremote` uses (service
+`0xFEA6`, command request/response characteristics `b5f90072`/`b5f90073` on
+GoPro's own 128-bit UUID base) come from the community-maintained protocol
+reference in [KonradIT/goprowifihack](https://github.com/KonradIT/goprowifihack/blob/master/Bluetooth/bluetooth-api.md)
+and the [Open GoPro tutorials](https://gopro.github.io/OpenGoPro/), cross-checked
+against each other, not from hardware this project owns a GoPro to test
+against — see the app's README for what that means for verification.
+
+---
+
 ## Vendor examples
 
 `examples_reference/arduino/` is the **V1** set (SH8601 + FT3168) and does
