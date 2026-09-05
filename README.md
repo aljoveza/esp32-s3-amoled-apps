@@ -23,6 +23,7 @@ for how that works.
 | [`pomodoro`](src/apps/pomodoro/) | Minimal pomodoro timer. Auto-cycling work/break ring, chime + sweep on transition, nothing to configure on-device. |
 | [`launcher`](src/apps/launcher/) | Home screen / app picker. Boots first; tap an app to open it. |
 | [`roundtimer`](src/apps/roundtimer/) | Game round countdown. Tap to start; rounds repeat automatically, with escalating colour/flash/sound as each one nears zero. |
+| [`camremote`](src/apps/camremote/) | Bluetooth camera remote. PHONE mode is a BLE HID remote (volume-key shutter trick); GOPRO mode connects directly to a GoPro (HERO8+) and fires its native shutter/record command. |
 
 ## Layout
 
@@ -45,7 +46,8 @@ for how that works.
 │       ├── hourglass/    app_config.h + main.cpp + its own UI
 │       ├── boardtest/
 │       ├── pomodoro/
-│       └── roundtimer/   game round countdown
+│       ├── roundtimer/   game round countdown
+│       └── camremote/    Bluetooth camera remote (phone HID + GoPro BLE)
 ├── docs/
 │   ├── HARDWARE.md       what this board actually is, and bring-up traps
 │   └── LAUNCHER.md       how on-device app switching fits together

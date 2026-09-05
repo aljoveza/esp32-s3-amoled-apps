@@ -43,6 +43,7 @@ app_slot() {
     pomodoro)  echo "slot2" ;;
     boardtest) echo "slot3" ;;
     roundtimer) echo "slot5" ;;
+    camremote) echo "slot4" ;;
     *)         echo "" ;;
   esac
 }
