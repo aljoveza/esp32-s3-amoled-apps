@@ -33,7 +33,6 @@ command -v pio >/dev/null 2>&1 || {
 }
 
 PART_CSV="partitions_launcher.csv"
-BOOT_APP0="$(find "$HOME/.platformio/packages/framework-arduinoespressif32/tools/partitions" -name boot_app0.bin 2>/dev/null | head -1)"
 
 # ---- app <-> slot mapping (must match src/apps/launcher/manifest.h) -----
 app_slot() {
@@ -56,6 +55,12 @@ slot_offset() {
     $1==n { gsub(/^[ \t]+|[ \t]+$/, "", $4); print $4; exit }
   ' "$PART_CSV"
 }
+slot_size() {
+  awk -F',' -v n="$1" '
+    { gsub(/^[ \t]+|[ \t]+$/, "", $1) }
+    $1==n { gsub(/^[ \t]+|[ \t]+$/, "", $5); print $5; exit }
+  ' "$PART_CSV"
+}
 
 # ---- discover apps from platformio.ini -----------------------------------
 mapfile -t APPS < <(sed -n 's/^\[env:\(.*\)\]$/\1/p' platformio.ini) 2>/dev/null || \
@@ -74,6 +79,25 @@ esptool_run() {  # esptool_run <port> <offset1> <file1> [<offset2> <file2> ...]
   pio pkg exec -p tool-esptoolpy -- esptool.py --chip esp32s3 --port "$port" \
     --baud 460800 --before default_reset --after hard_reset \
     write_flash -z --flash_mode dio --flash_freq 80m --flash_size 16MB "$@"
+}
+
+# Erases the otadata partition outright rather than overwriting it with
+# boot_app0.bin. A *blank* otadata partition reliably makes the bootloader
+# default to ota_0 (launcher) -- writing boot_app0.bin does not: its file
+# only initializes one of otadata's two redundant sectors to sequence 1,
+# and a chip that has ever had esp_ota_set_boot_partition() called on it
+# (i.e. any app switch ever done on-device) can already have a validly-
+# CRC'd, higher sequence number sitting in the *other* sector, which wins
+# and leaves the board booting whatever it last booted -- not the launcher
+# -- even right after "flash everything". Confirmed on hardware: a boot_app0
+# write alone silently failed to reset boot state on a board with app-switch
+# history; erasing both sectors did not.
+erase_otadata() {  # erase_otadata <port>
+  local off; off="$(slot_offset "otadata")"
+  local sz;  sz="$(slot_size "otadata")"
+  [ -z "$off" ] || [ -z "$sz" ] && { echo "${YEL}otadata not found in $PART_CSV -- skipping erase.${OFF}"; return 0; }
+  pio pkg exec -p tool-esptoolpy -- esptool.py --chip esp32s3 --port "$1" \
+    --after no_reset erase_region "$off" "$sz"
 }
 
 ensure_port() {
@@ -147,12 +171,9 @@ flash_all() {
   [ "$BUILD_ONLY" = "1" ] && { echo "${GRN}Built (build-only, not flashed): ${built[*]}${OFF}"; return 0; }
 
   ensure_port
+  echo "${CYN}Resetting OTA boot state (otadata) so the board boots the launcher...${OFF}"
+  erase_otadata "$PORT"
   args=("0x0" ".pio/build/launcher/bootloader.bin" "0x8000" ".pio/build/launcher/partitions.bin")
-  if [ -n "$BOOT_APP0" ]; then
-    args+=("0xe000" "$BOOT_APP0")   # resets OTA boot selection to slot 0 (launcher)
-  else
-    echo "${YEL}boot_app0.bin not found - otadata will keep whatever it already has.${OFF}"
-  fi
   for app in "${built[@]}"; do
     local slot; slot="$(app_slot "$app")"
     local off; off="$(slot_offset "$slot")"
