@@ -65,9 +65,19 @@ behaving:**
 ```bash
 ./flash.sh all
 ```
-Writes the bootloader, the partition table, `boot_app0.bin` (resets OTA
-state so the chip boots the launcher), and every mapped app — one `esptool`
-invocation, all in one shot.
+Writes the bootloader, the partition table, and every mapped app, after
+first **erasing** the `otadata` partition outright so the chip boots the
+launcher. This used to overwrite `otadata` with `boot_app0.bin` instead --
+switched after that silently failed to reset boot state on a board with
+any app-switch history: `otadata` is two redundant sectors, and
+`boot_app0.bin` only initializes one of them, so a board that has ever had
+`esp_ota_set_boot_partition()` called on it (i.e. any on-device app switch,
+ever) can already have a validly-CRC'd, higher sequence number sitting in
+the *other* sector -- which wins, and `flash.sh all` finishes claiming
+"the board will boot into the launcher" while it actually boots whatever
+it last booted. A genuinely blank `otadata` doesn't have this ambiguity:
+with no factory partition in this table, the bootloader's documented
+fallback for blank OTA data is always `ota_0` (launcher).
 
 **Updating a single already-provisioned app:**
 ```bash
