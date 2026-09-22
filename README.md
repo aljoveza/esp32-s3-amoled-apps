@@ -24,6 +24,7 @@ for how that works.
 | [`launcher`](src/apps/launcher/) | Home screen / app picker. Boots first; tap an app to open it. |
 | [`roundtimer`](src/apps/roundtimer/) | Game round countdown. Tap to start; rounds repeat automatically, with escalating colour/flash/sound as each one nears zero. |
 | [`camremote`](src/apps/camremote/) | Bluetooth camera remote. PHONE mode is a BLE HID remote (volume-key shutter trick); GOPRO mode connects directly to a GoPro (HERO8+) and fires its native shutter/record command. |
+| [`calendar`](src/apps/calendar/) | Google Calendar desk dashboard. Shows the event running now and how long it's been going, and the next event and how long until it starts — talks to Google directly over Wi-Fi, no backend server. |
 
 ## Layout
 
@@ -47,7 +48,8 @@ for how that works.
 │       ├── boardtest/
 │       ├── pomodoro/
 │       ├── roundtimer/   game round countdown
-│       └── camremote/    Bluetooth camera remote (phone HID + GoPro BLE)
+│       ├── camremote/    Bluetooth camera remote (phone HID + GoPro BLE)
+│       └── calendar/     Google Calendar desk dashboard (Wi-Fi, no backend)
 ├── docs/
 │   ├── HARDWARE.md       what this board actually is, and bring-up traps
 │   └── LAUNCHER.md       how on-device app switching fits together
@@ -78,8 +80,10 @@ mkdir -p src/apps/myapp
    ```
 
 3. Give it a slot: add a case to `app_slot()` in `flash.sh` and an entry to
-   `APP_MANIFEST` in `src/apps/launcher/manifest.h` (there are five free —
-   `slot1`..`slot5`). Both must name the same slot — see `docs/LAUNCHER.md`.
+   `APP_MANIFEST` in `src/apps/launcher/manifest.h` (`slot1`..`slot6` are all
+   taken as of this writing — add a new `slotN` row to
+   `partitions_launcher.csv` first if none are free). Both must name the
+   same slot — see `docs/LAUNCHER.md`.
 4. `./flash.sh all` to build and provision everything, or `./flash.sh myapp`
    once its slot exists.
 

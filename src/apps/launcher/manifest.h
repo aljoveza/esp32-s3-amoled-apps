@@ -24,5 +24,6 @@ static const AppEntry APP_MANIFEST[] = {
   {"Round Timer","slot5"},
   {"Cam Remote", "slot4"},
   {"Board Test", "slot3"},
+  {"Calendar",   "slot6"},
 };
 static const int APP_MANIFEST_COUNT = sizeof(APP_MANIFEST) / sizeof(APP_MANIFEST[0]);
