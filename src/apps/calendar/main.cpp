@@ -68,23 +68,32 @@ static void runStartupPhases(uint32_t nowMs) {
   switch (s_phase) {
     case PHASE_WIFI:
       if (WiFi.status() == WL_CONNECTED) {
+        Serial.printf("[Calendar] Wi-Fi connected, IP %s\n", WiFi.localIP().toString().c_str());
         s_phase = PHASE_TIME;
         s_retryAt = 0;
         timeStart();
         s_statusLine = "Syncing time...";
+      } else if (s_retryAt != 0) {
+        // Already timed out once -- just waiting out the backoff, nothing
+        // to do each loop tick until it elapses (see the branch below,
+        // which used to re-run every tick here and spam WiFi.disconnect()).
+        if (nowMs >= s_retryAt) { s_retryAt = 0; wifiStart(); }
       } else if (nowMs - s_phaseAttemptAt >= WIFI_CONNECT_TIMEOUT_MS) {
+        Serial.printf("[Calendar] Wi-Fi connect timed out (status=%d), retrying in %lums\n",
+                     (int)WiFi.status(), (unsigned long)WIFI_RETRY_BACKOFF_MS);
         WiFi.disconnect(true);
         s_statusLine = "Wi-Fi failed, retrying...";
-        if (s_retryAt == 0) s_retryAt = nowMs + WIFI_RETRY_BACKOFF_MS;
-        else if (nowMs >= s_retryAt) { s_retryAt = 0; wifiStart(); }
+        s_retryAt = nowMs + WIFI_RETRY_BACKOFF_MS;
       }
       break;
 
     case PHASE_TIME:
       if (timeIsSynced()) {
+        Serial.printf("[Calendar] Time synced: epoch %ld\n", (long)time(nullptr));
         s_phase = PHASE_RUNNING;
         s_nextPollAt = nowMs;   // fetch right away
       } else if (nowMs - s_phaseAttemptAt >= NTP_SYNC_TIMEOUT_MS) {
+        Serial.println("[Calendar] NTP sync timed out, retrying");
         s_statusLine = "Time sync failed, retrying...";
         timeStart();
       }
@@ -126,7 +135,10 @@ static void runPolling(uint32_t nowMs) {
     return;
   }
 
+  Serial.println("[Calendar] polling agenda...");
   bool ok = gcalFetchAgenda(&s_current, &s_hasCurrent, &s_next, &s_hasNext);
+  Serial.printf("[Calendar] poll result: ok=%d hasCurrent=%d hasNext=%d\n",
+               ok, s_hasCurrent, s_hasNext);
   if (!ok) Serial.println("[Calendar] agenda fetch failed, keeping last known agenda");
 
   bool charging = !batteryAvailable() || batteryCharging();
