@@ -43,6 +43,7 @@ app_slot() {
     boardtest) echo "slot3" ;;
     roundtimer) echo "slot5" ;;
     camremote) echo "slot4" ;;
+    calendar)  echo "slot6" ;;
     *)         echo "" ;;
   esac
 }

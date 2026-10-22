@@ -28,3 +28,8 @@ firmware_backup/
 
 # Local Pi runtime state
 .atl/
+
+# WiFi + Google OAuth credentials for the calendar app -- never commit these.
+# src/apps/calendar/secrets.h.example is the tracked template; see
+# src/apps/calendar/SETUP.md.
+src/apps/calendar/secrets.h
