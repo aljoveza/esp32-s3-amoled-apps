@@ -4,8 +4,8 @@
 //  Reads the primary Google Calendar directly over Wi-Fi/HTTPS (no backend
 //  server -- see google_calendar.h and SETUP.md) and shows the event
 //  running right now plus how long it's been going, and the next event plus
-//  how long until it starts. A fixed-orientation desk dashboard, not a
-//  handheld app.
+//  how long until it starts. The UI rotates to follow the device, same as
+//  pomodoro/hourglass (src/common/motion.h).
 //
 //  Boots through three phases: connect Wi-Fi, sync time over NTP (this
 //  board has no battery-backed RTC), then run -- polling the calendar on
@@ -28,6 +28,7 @@
 #include "display_driver.h"
 #include "app_switch.h"
 #include "battery.h"
+#include "motion.h"
 #include "google_calendar.h"
 #include "calendar_ui.h"
 
@@ -164,6 +165,7 @@ static CalendarView buildView() {
   if (s_hasCurrent) {
     v.currentTitle = s_current.title;
     v.elapsedSec = (now > s_current.start) ? (uint32_t)(now - s_current.start) : 0;
+    v.totalSec = (s_current.end > s_current.start) ? (uint32_t)(s_current.end - s_current.start) : 0;
   }
   v.hasNext = s_hasNext;
   if (s_hasNext) {
@@ -186,6 +188,7 @@ void setup() {
   initDisplayAndTouch();
   setDisplayBrightness(DISPLAY_BRIGHTNESS_PLUGGED);
   batteryBegin();
+  motionBegin();
 
   calendarUiInit();
   calendarUiFullRedraw(buildView());
@@ -206,6 +209,14 @@ void loop() {
 
   if (s_phase == PHASE_RUNNING) runPolling(nowMs);
   else runStartupPhases(nowMs);
+
+  motionPoll();
+#if SCREEN_FOLLOWS_DEVICE
+  {
+    int8_t q = motionOrientation();
+    if (q >= 0) calendarUiSetRotation((uint8_t)((q + SCREEN_ROTATION_OFFSET) & 3));
+  }
+#endif
 
   bool onBattery = batteryAvailable() && !batteryCharging();
   if (onBattery != s_brightnessOnBattery) {

@@ -1,10 +1,11 @@
 # Calendar
 
-A fixed desk dashboard for your primary Google Calendar: the event running
-right now and how long it's been going, and the next event and how long
-until it starts. Talks to Google directly over Wi-Fi/HTTPS — no backend
-server involved, see `SETUP.md` for the one-time OAuth setup this needs
-before it can ever show real data.
+A desk dashboard for your primary Google Calendar: the event running right
+now and how long it's been going, and the next event and how long until it
+starts. The UI rotates to follow the device, same as pomodoro/hourglass.
+Talks to Google directly over Wi-Fi/HTTPS — no backend server involved, see
+`SETUP.md` for the one-time OAuth setup this needs before it can ever show
+real data.
 
 > **Verification status:** this app builds against the ESP32 Arduino core's
 > `WiFi.h`/`WiFiClientSecure`/`HTTPClient` and `bblanchon/ArduinoJson`, and

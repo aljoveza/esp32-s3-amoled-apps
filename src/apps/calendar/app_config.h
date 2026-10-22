@@ -36,3 +36,8 @@
 #define DISPLAY_BRIGHTNESS_PLUGGED  DISPLAY_BRIGHTNESS
 #define DISPLAY_BRIGHTNESS_BATTERY  90
 #define FRAME_INTERVAL_MS           1000   // duration readout only needs 1 Hz
+
+// ---- Interaction ------------------------------------------------------
+// Same "UI rotates to follow" behaviour as pomodoro/hourglass, inherited
+// from src/common/motion.h -- turn the board, the dashboard turns with it.
+#define SCREEN_FOLLOWS_DEVICE       1
